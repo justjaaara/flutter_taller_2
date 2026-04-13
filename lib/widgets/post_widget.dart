@@ -10,6 +10,8 @@ class PostWidget extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onLikePressed;
   final VoidCallback? onDislikePressed;
+  final VoidCallback? onEditPressed;
+  final VoidCallback? onDeletePressed;
 
   const PostWidget({
     super.key,
@@ -20,6 +22,8 @@ class PostWidget extends StatelessWidget {
     this.onTap,
     this.onLikePressed,
     this.onDislikePressed,
+    this.onEditPressed,
+    this.onDeletePressed,
   });
 
   @override
@@ -132,12 +136,27 @@ class PostWidget extends StatelessWidget {
                     value: post.views,
                     color: Colors.blueGrey.shade700,
                   ),
-                  const Spacer(),
-                  Text(
-                    'User ${post.userId}',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: onEditPressed,
+                    visualDensity: VisualDensity.compact,
+                    tooltip: 'Update',
+                    icon: const Icon(Icons.edit_outlined, size: 18),
+                  ),
+                  IconButton(
+                    onPressed: onDeletePressed,
+                    visualDensity: VisualDensity.compact,
+                    tooltip: 'Delete',
+                    icon: const Icon(Icons.delete_outline, size: 18),
+                  ),
+                  Expanded(
+                    child: Text(
+                      'User ${post.userId}',
+                      textAlign: TextAlign.end,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],

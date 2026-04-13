@@ -42,6 +42,26 @@ class Post {
       'userId': userId,
     };
   }
+
+  Post copyWith({
+    int? id,
+    String? title,
+    String? body,
+    List<String>? tags,
+    Reactions? reactions,
+    int? views,
+    int? userId,
+  }) {
+    return Post(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      body: body ?? this.body,
+      tags: tags ?? this.tags,
+      reactions: reactions ?? this.reactions,
+      views: views ?? this.views,
+      userId: userId ?? this.userId,
+    );
+  }
 }
 
 class Reactions {

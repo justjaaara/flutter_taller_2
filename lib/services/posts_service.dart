@@ -97,4 +97,46 @@ class PostsService {
 
     return Post.fromJson(_normalizePostJson(decoded));
   }
+
+  Future<Post> updatePost({
+    required int id,
+    required String title,
+    String body = '',
+    List<String> tags = const <String>[],
+  }) async {
+    final payload = <String, dynamic>{
+      'title': title,
+      'body': body,
+      'tags': tags,
+    };
+
+    final response = await http
+        .put(
+          Uri.parse('$baseUrl/posts/$id'),
+          headers: const {'Content-Type': 'application/json'},
+          body: jsonEncode(payload),
+        )
+        .timeout(const Duration(seconds: 8));
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Failed to update post');
+    }
+
+    final dynamic decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw Exception('Update response does not have the expected format');
+    }
+
+    return Post.fromJson(_normalizePostJson(decoded));
+  }
+
+  Future<void> deletePost({required int id}) async {
+    final response = await http
+        .delete(Uri.parse('$baseUrl/posts/$id'))
+        .timeout(const Duration(seconds: 8));
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Failed to delete post');
+    }
+  }
 }
