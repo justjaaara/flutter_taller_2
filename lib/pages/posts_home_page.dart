@@ -16,6 +16,8 @@ class PostHomePage extends StatefulWidget {
 class _PostHomePageState extends State<PostHomePage> {
   static const String _likedPostIdsKey = 'likedPostIds';
   static const String _createdPostsKey = 'createdPosts';
+  static const String _updatedPostsKey = 'updatedPosts';
+  static const String _deletedPostIdsKey = 'deletedPostIds';
 
   final Set<int> _likedPostIds = {};
   final Map<int, int> _likeDeltasByPostId = {};
@@ -42,6 +44,8 @@ class _PostHomePageState extends State<PostHomePage> {
     _postsFuture = _postsService.getPosts();
     _loadLikedPosts();
     _loadCreatedPosts();
+    _loadUpdatedPosts();
+    _loadDeletedPostIds();
   }
 
   Future<void> _loadLikedPosts() async {
@@ -74,6 +78,39 @@ class _PostHomePageState extends State<PostHomePage> {
     });
   }
 
+  Future<void> _loadUpdatedPosts() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_updatedPostsKey);
+    if (raw == null || raw.isEmpty) return;
+
+    final decoded = jsonDecode(raw);
+    if (decoded is! List) return;
+
+    final loadedPosts = decoded
+        .whereType<Map<String, dynamic>>()
+        .map(Post.fromJson)
+        .toList();
+
+    if (!mounted) return;
+    setState(() {
+      _updatedPostsById
+        ..clear()
+        ..addEntries(loadedPosts.map((post) => MapEntry(post.id, post)));
+    });
+  }
+
+  Future<void> _loadDeletedPostIds() async {
+    final prefs = await SharedPreferences.getInstance();
+    final ids = prefs.getStringList(_deletedPostIdsKey) ?? [];
+
+    if (!mounted) return;
+    setState(() {
+      _deletedPostIds
+        ..clear()
+        ..addAll(ids.map(int.parse));
+    });
+  }
+
   Future<void> _saveLikedPosts() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList(
@@ -88,6 +125,22 @@ class _PostHomePageState extends State<PostHomePage> {
       _createdPosts.map((post) => post.toJson()).toList(),
     );
     await prefs.setString(_createdPostsKey, encoded);
+  }
+
+  Future<void> _saveUpdatedPosts() async {
+    final prefs = await SharedPreferences.getInstance();
+    final encoded = jsonEncode(
+      _updatedPostsById.values.map((post) => post.toJson()).toList(),
+    );
+    await prefs.setString(_updatedPostsKey, encoded);
+  }
+
+  Future<void> _saveDeletedPostIds() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(
+      _deletedPostIdsKey,
+      _deletedPostIds.map((id) => id.toString()).toList(),
+    );
   }
 
   void _updateLikedPosts(int postId, bool isLiked) {
@@ -240,9 +293,13 @@ class _PostHomePageState extends State<PostHomePage> {
       if (!mounted) return;
 
       setState(() {
+        _updatedPostsById.remove(newPost.id);
+        _deletedPostIds.remove(newPost.id);
         _createdPosts.insert(0, newPost);
       });
       await _saveCreatedPosts();
+      await _saveUpdatedPosts();
+      await _saveDeletedPostIds();
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Post creado con id ${newPost.id}')),
@@ -312,7 +369,7 @@ class _PostHomePageState extends State<PostHomePage> {
           tags: updatedPost.tags,
         );
       });
-      await _saveCreatedPosts();
+      await _saveUpdatedPosts();
 
       ScaffoldMessenger.of(
         context,
@@ -363,6 +420,8 @@ class _PostHomePageState extends State<PostHomePage> {
           _deletedPostIds.add(post.id);
         });
         await _saveCreatedPosts();
+        await _saveUpdatedPosts();
+        await _saveDeletedPostIds();
 
         ScaffoldMessenger.of(
           context,
@@ -380,6 +439,8 @@ class _PostHomePageState extends State<PostHomePage> {
         _deletedPostIds.add(post.id);
       });
       await _saveCreatedPosts();
+      await _saveUpdatedPosts();
+      await _saveDeletedPostIds();
 
       ScaffoldMessenger.of(
         context,
